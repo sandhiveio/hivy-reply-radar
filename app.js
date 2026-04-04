@@ -30,7 +30,7 @@ let queue = [];
 
 const config = window.RAPID_API_CONFIG;
 if (!config?.key) {
-  setStatus('Не найден API ключ. Добавьте файл api-config.js (см. api-config.example.js).');
+  setStatus('API key not found. Add api-config.js (see api-config.example.js).');
 } else {
   bootstrap();
 }
@@ -47,13 +47,13 @@ document.querySelectorAll('[data-feedback]').forEach((btn) => {
 
 async function bootstrap({ forceRefresh = false } = {}) {
   try {
-    setStatus('Собираем посты…');
+    setStatus('Fetching posts…');
     const posts = await getPosts({ forceRefresh });
     const visiblePosts = posts.filter((post) => !wasShownRecently(post.postKey));
 
     queue = visiblePosts;
     if (!queue.length) {
-      setStatus('Свежих постов нет: все уже показывались за последние 7 дней. Нажмите «Обновить посты» позже.');
+      setStatus('No fresh posts: all posts were already shown in the last 7 days. Click "Refresh posts" later.');
       hideWidget();
       return;
     }
@@ -61,7 +61,7 @@ async function bootstrap({ forceRefresh = false } = {}) {
     showWidget();
     showNextPost();
   } catch (error) {
-    setStatus(`Ошибка загрузки: ${error.message}`);
+    setStatus(`Loading error: ${error.message}`);
     hideWidget();
   }
 }
@@ -89,7 +89,7 @@ async function getPosts({ forceRefresh }) {
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
   const result = await response.json();
-  if (!result.success || !Array.isArray(result.data)) throw new Error('Некорректный ответ API');
+  if (!result.success || !Array.isArray(result.data)) throw new Error('Invalid API response');
 
   upsertPostCache(result.data);
 
@@ -111,7 +111,7 @@ async function getPosts({ forceRefresh }) {
 
 function showNextPost() {
   if (!queue.length) {
-    setStatus('Посты в очереди закончились. Можно обновить фид.');
+    setStatus('No more posts in the queue. You can refresh the feed.');
     hideWidget();
     return;
   }
@@ -122,23 +122,23 @@ function showNextPost() {
 }
 
 function renderPost(post) {
-  authorLink.textContent = post.author || 'Автор не указан';
+  authorLink.textContent = post.author || 'Unknown author';
   authorLink.href = post.authorUrl || '#';
-  postDate.textContent = new Date(post.createdAt).toLocaleString('ru-RU', {
+  postDate.textContent = new Date(post.createdAt).toLocaleString('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
 
   postLink.href = post.postUrl;
-  postText.textContent = truncate(post.text || 'Без текста', 700);
-  likesBadge.textContent = `👍 ${post.likes ?? 0} лайков`;
-  commentsBadge.textContent = `💬 ${post.commentsCount ?? 0} комментариев`;
+  postText.textContent = truncate(post.text || 'No text', 700);
+  likesBadge.textContent = `👍 ${post.likes ?? 0} likes`;
+  commentsBadge.textContent = `💬 ${post.commentsCount ?? 0} comments`;
 
   const lowComments = (post.commentsCount ?? 0) < LOW_COMMENTS_THRESHOLD;
-  suggestionBadge.textContent = lowComments ? 'Рекомендация: оставить комментарий' : 'Рекомендация: сделать quote-post';
+  suggestionBadge.textContent = lowComments ? 'Suggestion: leave a comment' : 'Suggestion: make a quote post';
   commentDraft.textContent = lowComments
-    ? 'Классная мысль! Особенно понравилось, как вы описали практический кейс. Я бы добавил, что на этапе внедрения важно заранее определить метрики качества.'
-    : 'Сильный тезис, забираю в quote 👏 Отдельно отмечу идею про скорость итераций — в командах это реально становится новым конкурентным преимуществом.';
+    ? 'Great point! I especially liked how you described the practical use case. I'd add that it's important to define quality metrics before implementation.'
+    : 'Strong thesis, sharing as a quote 👏 I also want to highlight the idea about iteration speed — for teams this is becoming a real competitive advantage.';
 
   loadingState.classList.add('hidden');
   postCard.classList.remove('hidden');

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,14 +17,14 @@
       <header class="app-header">
         <div>
           <p class="eyebrow">LinkedIn Reply Radar</p>
-          <h1>Лента постов + подсказки для комментария</h1>
+          <h1>Post feed + comment suggestions</h1>
         </div>
-        <button id="refreshBtn" class="ghost-btn">Обновить посты</button>
+        <button id="refreshBtn" class="ghost-btn">Refresh posts</button>
       </header>
 
       <main>
         <section class="widget" id="widget">
-          <div class="widget__state" id="loadingState">Загружаем посты…</div>
+          <div class="widget__state" id="loadingState">Loading posts…</div>
 
           <article class="post-card hidden" id="postCard">
             <div class="post-card__meta">
@@ -32,7 +32,7 @@
                 <a id="authorLink" target="_blank" rel="noreferrer"></a>
                 <p id="postDate"></p>
               </div>
-              <a id="postLink" target="_blank" rel="noreferrer">Открыть в LinkedIn ↗</a>
+              <a id="postLink" target="_blank" rel="noreferrer">Open in LinkedIn ↗</a>
             </div>
 
             <p id="postText" class="post-card__text"></p>
@@ -45,14 +45,14 @@
           </article>
 
           <section class="suggestion-panel hidden" id="suggestionPanel">
-            <h2>Предполагаемый комментарий</h2>
+            <h2>Suggested comment</h2>
             <p id="commentDraft"></p>
           </section>
 
           <footer class="actions hidden" id="actions">
-            <button data-feedback="relevant" class="action-btn success">Релевантно</button>
-            <button data-feedback="irrelevant" class="action-btn danger">Не релевантно</button>
-            <button id="nextBtn" class="action-btn primary">Следующий</button>
+            <button data-feedback="relevant" class="action-btn success">Relevant</button>
+            <button data-feedback="irrelevant" class="action-btn danger">Not relevant</button>
+            <button id="nextBtn" class="action-btn primary">Next</button>
           </footer>
         </section>
       </main>
