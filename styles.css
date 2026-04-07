@@ -89,16 +89,11 @@ h1 {
   font-size: 13px;
 }
 
-.post-card__embed-wrap {
-  background: #0f1831;
-  border: 1px solid rgba(162, 186, 237, 0.16);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.post-card__embed {
-  width: 100%;
-  min-height: 592px;
+.post-card__text {
+  margin: 0;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  color: #d5e4ff;
 }
 
 .post-card__stats {
