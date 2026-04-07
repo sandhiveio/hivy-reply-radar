@@ -45,7 +45,7 @@ const actions = document.getElementById('actions');
 const authorLink = document.getElementById('authorLink');
 const postDate = document.getElementById('postDate');
 const postLink = document.getElementById('postLink');
-const postEmbed = document.getElementById('postEmbed');
+const postText = document.getElementById('postText');
 const likesBadge = document.getElementById('likesBadge');
 const commentsBadge = document.getElementById('commentsBadge');
 const suggestionBadge = document.getElementById('suggestionBadge');
@@ -172,6 +172,12 @@ function showNextPost() {
 }
 
 function renderPost(post) {
+  if (!postText) {
+    setStatus('UI error: missing #postText element. Please reload the page.');
+    hideWidget();
+    return;
+  }
+
   authorLink.textContent = post.author || 'Unknown author';
   authorLink.href = post.authorUrl || '#';
   postDate.textContent = new Date(post.createdAt).toLocaleString('en-US', {
@@ -180,7 +186,7 @@ function renderPost(post) {
   });
 
   postLink.href = post.postUrl;
-  postEmbed.src = getLinkedInEmbedUrl(post);
+  postText.textContent = truncate(post.text || 'No text', 700);
   likesBadge.textContent = `👍 ${post.likes ?? 0} likes`;
   commentsBadge.textContent = `💬 ${post.commentsCount ?? 0} comments`;
 
@@ -329,42 +335,8 @@ function readJson(key, fallback) {
   }
 }
 
-function getLinkedInEmbedUrl(post) {
-  const directUrn = [post?.postUrn, post?.urn, post?.updateUrn].find((value) =>
-    isLinkedInUrn(value),
-  );
-
-  if (directUrn) {
-    return buildEmbedUrl(directUrn);
-  }
-
-  const fromUrl = extractUrnFromUrl(post?.postUrl || '');
-  if (fromUrl) {
-    return buildEmbedUrl(fromUrl);
-  }
-
-  return '';
-}
-
-function isLinkedInUrn(value) {
-  return typeof value === 'string' && /^urn:li:(share|activity):\d+$/.test(value.trim());
-}
-
-function extractUrnFromUrl(url) {
-  if (!url) return null;
-
-  const decodedUrl = decodeURIComponent(url);
-  const explicitUrn = decodedUrl.match(/urn:li:(share|activity):\d+/);
-  if (explicitUrn) return explicitUrn[0];
-
-  const numericId = decodedUrl.match(/-(\d{8,})\/?$/);
-  if (!numericId) return null;
-
-  return `urn:li:share:${numericId[1]}`;
-}
-
-function buildEmbedUrl(urn) {
-  return `https://www.linkedin.com/embed/feed/update/${encodeURIComponent(urn)}?collapsed=1`;
+function truncate(text, max) {
+  return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
 function getFallbackToken() {
