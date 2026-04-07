@@ -131,6 +131,25 @@ h1 {
   color: #d8e7ff;
 }
 
+.suggestion-panel p.is-loading {
+  color: var(--muted);
+  font-style: italic;
+  position: relative;
+}
+
+.suggestion-panel p.is-loading::after {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 8px;
+  border-radius: 50%;
+  border: 2px solid rgba(158, 178, 216, 0.35);
+  border-top-color: #d8e7ff;
+  vertical-align: text-bottom;
+  animation: spin 0.8s linear infinite;
+}
+
 .actions {
   margin-top: 14px;
   display: flex;
@@ -164,6 +183,10 @@ button {
 .action-btn.danger { background: linear-gradient(90deg, #ff6e84, #ff4b6a); }
 
 .hidden { display: none; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 @media (max-width: 680px) {
   .post-card__meta { flex-direction: column; }
