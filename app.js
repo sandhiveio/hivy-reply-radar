@@ -7,6 +7,8 @@ const FEEDBACK_KEY = 'reply-radar-feedback-v1';
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const FEED_TTL_MS = 20 * 60 * 1000;
 const LOW_COMMENTS_THRESHOLD = 8;
+const PAGE_LIMIT = 10;
+const MAX_OFFSET_ATTEMPTS = 5;
 
 const loadingState = document.getElementById('loadingState');
 const postCard = document.getElementById('postCard');
@@ -78,25 +80,38 @@ async function getPosts({ forceRefresh }) {
     }
   }
 
-  const payload = { minLikes: 10, limit: 10, offset: 0 };
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-rapidapi-host': API_HOST,
-      'x-rapidapi-key': apiKey,
-    },
-    body: JSON.stringify(payload),
-  });
+  const currentCache = readJson(POST_CACHE_KEY, {});
+  let offset = 0;
+  let result = null;
 
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  for (let attempt = 0; attempt < MAX_OFFSET_ATTEMPTS; attempt += 1) {
+    const payload = { minLikes: 100, limit: PAGE_LIMIT, offset, country: 'www' };
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-rapidapi-host': API_HOST,
+        'x-rapidapi-key': apiKey,
+      },
+      body: JSON.stringify(payload),
+    });
 
-  const result = await response.json();
-  if (!result.success || !Array.isArray(result.data)) throw new Error('Invalid API response');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-  upsertPostCache(result.data);
+    result = await response.json();
+    if (!result.success || !Array.isArray(result.data)) throw new Error('Invalid API response');
 
-  const posts = result.data.map((post) => ({
+    const hasUncachedPosts = result.data.some((post) => !currentCache[post.postKey]);
+    const isLastPage = result.data.length < PAGE_LIMIT;
+    if (hasUncachedPosts || isLastPage) break;
+
+    offset += PAGE_LIMIT;
+  }
+
+  const responsePosts = result?.data || [];
+  upsertPostCache(responsePosts);
+
+  const posts = responsePosts.map((post) => ({
     ...post,
     cachedAt: Date.now(),
   }));
