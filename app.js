@@ -172,6 +172,12 @@ function showNextPost() {
 }
 
 function renderPost(post) {
+  if (!postText) {
+    setStatus('UI error: missing #postText element. Please reload the page.');
+    hideWidget();
+    return;
+  }
+
   authorLink.textContent = post.author || 'Unknown author';
   authorLink.href = post.authorUrl || '#';
   postDate.textContent = new Date(post.createdAt).toLocaleString('en-US', {
