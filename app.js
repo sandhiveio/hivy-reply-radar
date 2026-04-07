@@ -80,7 +80,8 @@ async function getPosts({ forceRefresh }) {
     }
   }
 
-  const currentCache = readJson(POST_CACHE_KEY, {});
+  const shownCache = readJson(SHOWN_CACHE_KEY, {});
+  const now = Date.now();
   let offset = 0;
   let result = null;
 
@@ -101,9 +102,12 @@ async function getPosts({ forceRefresh }) {
     result = await response.json();
     if (!result.success || !Array.isArray(result.data)) throw new Error('Invalid API response');
 
-    const hasUncachedPosts = result.data.some((post) => !currentCache[post.postKey]);
+    const hasUnshownPosts = result.data.some((post) => {
+      const shownAt = shownCache[post.postKey];
+      return !(shownAt && now - shownAt < WEEK_MS);
+    });
     const isLastPage = result.data.length < PAGE_LIMIT;
-    if (hasUncachedPosts || isLastPage) break;
+    if (hasUnshownPosts || isLastPage) break;
 
     offset += PAGE_LIMIT;
   }
