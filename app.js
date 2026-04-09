@@ -152,6 +152,8 @@ const commentsBadge = document.getElementById('commentsBadge');
 const suggestionBadge = document.getElementById('suggestionBadge');
 const commentDraft = document.getElementById('commentDraft');
 const copyCommentBtn = document.getElementById('copyCommentBtn');
+const logList = document.getElementById('logList');
+const logCounter = document.getElementById('logCounter');
 
 const refreshBtn = document.getElementById('refreshBtn');
 const nextBtn = document.getElementById('nextBtn');
@@ -170,21 +172,31 @@ const apiKey = config?.key || fallbackToken;
 
 if (!apiKey) {
   setStatus('API key not found. Add api-config.js (see api-config.example.js).');
+  addLog('Missing API key. Configure api-config.js to start.');
 } else {
+  addLog('API key loaded. Bootstrapping feed.');
   bootstrap();
 }
 
-refreshBtn.addEventListener('click', () => bootstrap({ forceRefresh: true }));
-nextBtn.addEventListener('click', () => showNextPost());
+refreshBtn.addEventListener('click', () => {
+  addLog('Manual refresh triggered.');
+  bootstrap({ forceRefresh: true });
+});
+nextBtn.addEventListener('click', () => {
+  addLog('Moved to next post.');
+  showNextPost();
+});
 emptyPostsFilterToggle.checked = isEmptyPostFilterEnabled();
 emptyPostsFilterToggle.addEventListener('change', () => {
   localStorage.setItem(EMPTY_POST_FILTER_KEY, JSON.stringify(emptyPostsFilterToggle.checked));
+  addLog(`Low-signal filter ${emptyPostsFilterToggle.checked ? 'enabled' : 'disabled'}.`);
   bootstrap({ forceRefresh: false });
 });
 document.querySelectorAll('[data-feedback]').forEach((btn) => {
   btn.addEventListener('click', () => {
     if (!currentPost) return;
     storeFeedback(currentPost.postKey, btn.dataset.feedback);
+    addLog(`Feedback "${btn.dataset.feedback}" saved.`);
     showNextPost();
   });
 });
@@ -195,6 +207,7 @@ async function bootstrap({ forceRefresh = false } = {}) {
     hasMorePosts = true;
     paginationOffset = 0;
     setStatus('Fetching posts…');
+    addLog(`Fetching posts (${forceRefresh ? 'force refresh' : 'cache allowed'}).`);
     queue = [];
     await loadMorePosts({ forceRefresh });
     if (!queue.length) {
@@ -202,14 +215,17 @@ async function bootstrap({ forceRefresh = false } = {}) {
         ? ' (some posts were excluded by the hiring/empty-post filter).'
         : '.';
       setStatus(`No fresh posts: all posts were already shown in the last 7 days${filterSuffix} Click "Refresh posts" later.`);
+      addLog('No fresh posts available after filtering and recent-history check.');
       hideWidget();
       return;
     }
 
+    addLog(`Queue prepared with ${queue.length} post(s).`);
     showWidget();
     showNextPost();
   } catch (error) {
     setStatus(`Loading error: ${error.message}`);
+    addLog(`Bootstrap failed: ${error.message}`);
     hideWidget();
   }
 }
@@ -286,9 +302,11 @@ async function getPosts({ forceRefresh, offset = 0 }) {
 
 function showNextPost() {
   if (!queue.length) {
+    addLog('Queue is empty, requesting another page.');
     loadMorePosts().then(() => {
       if (!queue.length) {
         setStatus('No more posts in the queue. You can refresh the feed.');
+        addLog('No more posts available.');
         hideWidget();
         return;
       }
@@ -298,6 +316,7 @@ function showNextPost() {
   }
 
   currentPost = queue.shift();
+  addLog(`Rendering post by ${currentPost.author || 'Unknown author'}.`);
   markShown(currentPost.postKey);
   renderPost(currentPost);
 
@@ -327,6 +346,9 @@ function renderPost(post) {
 
   const lowComments = (post.commentsCount ?? 0) < LOW_COMMENTS_THRESHOLD;
   suggestionBadge.textContent = lowComments ? 'Suggestion: leave a comment' : 'Suggestion: make a quote post';
+  addLog(
+    `${lowComments ? 'Comment' : 'Repost'} suggestion requested (${post.commentsCount ?? 0} comments).`,
+  );
   setDraftLoading(lowComments ? 'Generating relevant comment…' : 'Generating relevant repost text…');
   generateSuggestion(post, lowComments ? 1 : 2);
 
@@ -364,6 +386,7 @@ async function generateSuggestion(post, suggestionType) {
     const generatedReply = data?.reply?.trim();
     if (!generatedReply) throw new Error('Empty generator response');
 
+    addLog('Suggestion generated successfully.');
     setDraftText(generatedReply);
   } catch (error) {
     if (requestId !== generationRequestId) return;
@@ -372,6 +395,7 @@ async function generateSuggestion(post, suggestionType) {
         ? 'Could not generate comment now. Try Next or Refresh posts.'
         : 'Could not generate repost text now. Try Next or Refresh posts.',
     );
+    addLog(`Suggestion generation failed: ${error.message}`);
     console.error('Generation failed:', error);
   }
 }
@@ -389,6 +413,7 @@ async function loadMorePosts({ forceRefresh = false } = {}) {
       : posts;
     const visiblePosts = filteredPosts.filter((post) => !wasShownRecently(post.postKey));
     queue.push(...visiblePosts);
+    addLog(`Loaded ${posts.length} post(s), ${visiblePosts.length} visible after filtering.`);
 
     paginationOffset += PAGE_LIMIT;
     if (posts.length < PAGE_LIMIT) {
@@ -396,6 +421,7 @@ async function loadMorePosts({ forceRefresh = false } = {}) {
     }
   } catch (error) {
     setStatus(`Loading error: ${error.message}`);
+    addLog(`Feed loading failed: ${error.message}`);
     throw error;
   } finally {
     isFetchingMore = false;
@@ -445,8 +471,10 @@ async function copyCurrentSuggestion() {
 
   try {
     await navigator.clipboard.writeText(text);
+    addLog('Suggestion copied to clipboard.');
     copyCommentBtn.textContent = 'Copied!';
   } catch {
+    addLog('Clipboard write failed.');
     copyCommentBtn.textContent = 'Copy failed';
   }
   setTimeout(restoreCopyText, 1300);
@@ -539,4 +567,19 @@ function isEmptyPostFilterEnabled() {
 function isLowSignalPost(text) {
   if (!text) return false;
   return LOW_SIGNAL_POST_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+function addLog(message) {
+  if (!logList) return;
+  const item = document.createElement('li');
+  item.textContent = `[${new Date().toLocaleTimeString('en-US')}] ${message}`;
+  logList.prepend(item);
+
+  while (logList.children.length > 9) {
+    logList.removeChild(logList.lastChild);
+  }
+
+  if (logCounter) {
+    logCounter.textContent = String(logList.children.length);
+  }
 }
