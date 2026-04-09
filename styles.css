@@ -59,6 +59,13 @@ body {
   accent-color: #77bcff;
 }
 
+.toggle--strong {
+  background: linear-gradient(135deg, rgba(90, 176, 255, 0.28), rgba(124, 92, 255, 0.25));
+  border-color: rgba(165, 198, 255, 0.65);
+  box-shadow: 0 0 0 2px rgba(125, 170, 255, 0.2);
+  font-weight: 600;
+}
+
 .eyebrow {
   margin: 0;
   color: var(--muted);
@@ -85,6 +92,7 @@ h1 {
   border-radius: 14px;
   padding: 18px;
   color: var(--muted);
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
 .post-card, .suggestion-panel {
@@ -145,8 +153,24 @@ h1 {
 }
 
 .suggestion-panel h2 {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 18px;
+}
+
+.suggestion-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.copy-btn {
+  padding: 6px 10px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .suggestion-panel p {
@@ -210,6 +234,11 @@ button {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.72; }
 }
 
 @media (max-width: 680px) {
