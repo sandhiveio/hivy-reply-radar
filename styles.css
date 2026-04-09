@@ -35,6 +35,30 @@ body {
   margin-bottom: 20px;
 }
 
+.header-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #d1e2ff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(174, 191, 255, 0.2);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+.toggle input {
+  accent-color: #77bcff;
+}
+
 .eyebrow {
   margin: 0;
   color: var(--muted);
@@ -189,5 +213,7 @@ button {
 }
 
 @media (max-width: 680px) {
+  .app-header { align-items: flex-start; }
+  .header-controls { width: 100%; justify-content: flex-start; }
   .post-card__meta { flex-direction: column; }
 }

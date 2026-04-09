@@ -7,11 +7,84 @@ const FEED_CACHE_KEY = 'reply-radar-feed-cache-v1';
 const POST_CACHE_KEY = 'reply-radar-post-cache-v1';
 const SHOWN_CACHE_KEY = 'reply-radar-shown-posts-v1';
 const FEEDBACK_KEY = 'reply-radar-feedback-v1';
+const EMPTY_POST_FILTER_KEY = 'reply-radar-empty-post-filter-enabled-v1';
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const FEED_TTL_MS = 20 * 60 * 1000;
 const LOW_COMMENTS_THRESHOLD = 8;
 const PAGE_LIMIT = 10;
-const MAX_OFFSET_ATTEMPTS = 5;
+const MAX_OFFSET_ATTEMPTS = 12;
+const LOW_SIGNAL_POST_PATTERNS = [
+  // Hiring and recruiting
+  /\b(?:we(?:'re| are)?\s+)?hiring\b/i,
+  /\bhiring(?:\s+now|\s+alert|\s+for)?\b/i,
+  /\bjoin (?:our|my) team\b/i,
+  /\bjoin us\b/i,
+  /\bwe are looking for\b/i,
+  /\blooking to hire\b/i,
+  /\blooking for (?:a|an|our next)\b/i,
+  /\bopen(?:ing)?(?:s)?\b/i,
+  /\bvacanc(?:y|ies)\b/i,
+  /\bapply now\b/i,
+  /\bjob alert\b/i,
+  /\brefer(?:ral|rals)?\b/i,
+  /\bsend (?:me|us) (?:your )?cv\b/i,
+  /\bdm me\b.*\b(?:role|job|position)\b/i,
+  /\bposition (?:is )?open\b/i,
+  /\bopportunit(?:y|ies) to join\b/i,
+
+  // Generic low-signal congrats / people updates
+  /\bplease join us in congratulating\b/i,
+  /\bjoin me in congratulating\b/i,
+  /\bcongratulations to\b/i,
+  /\bwelcom(?:e|ing)\b.*\bto (?:the )?team\b/i,
+  /\bexcited to welcome\b/i,
+  /\bthrilled to welcome\b/i,
+
+  // Personal role/achievement announcements
+  /\bi'?m thrilled to share\b/i,
+  /\bi am thrilled to share\b/i,
+  /\bi'?m excited to share\b/i,
+  /\bi am excited to share\b/i,
+  /\bi'?m happy to share\b/i,
+  /\bi am happy to share\b/i,
+  /\bi'?m proud to share\b/i,
+  /\bi am proud to share\b/i,
+  /\bi'?m proud to be (?:a )?part of\b/i,
+  /\bi am proud to be (?:a )?part of\b/i,
+  /\bi'?m excited to announce\b/i,
+  /\bi am excited to announce\b/i,
+  /\bi'?m thrilled to announce\b/i,
+  /\bi am thrilled to announce\b/i,
+  /\bi'?m delighted to announce\b/i,
+  /\bi am delighted to announce\b/i,
+  /\bi'?m excited to start\b/i,
+  /\bi am excited to start\b/i,
+  /\bi'?ve joined\b/i,
+  /\bi have joined\b/i,
+  /\bi'?m joining\b/i,
+  /\bi am joining\b/i,
+  /\bi'?m moving to\b/i,
+  /\bi am moving to\b/i,
+  /\bstarting a new position\b/i,
+  /\bnew role\b/i,
+  /\bnew journey\b/i,
+  /\bnext chapter\b/i,
+  /\bcareer update\b/i,
+  /\bpromotion\b/i,
+  /\bhonored to be promoted\b/i,
+  /\bgrateful to share that\b/i,
+  /\bgrateful to announce\b/i,
+
+  // Empty fluff patterns
+  /\bwhat a journey\b/i,
+  /\bso grateful for this opportunity\b/i,
+  /\bfeeling blessed\b/i,
+  /\bdream come true\b/i,
+  /\bstay tuned\b/i,
+  /\bbig things coming\b/i,
+  /\bcan'?t wait for what'?s next\b/i,
+  /\bonwards and upwards\b/i,
+];
 const GENERATION_STYLE_PROMPT = [
   `## Goal of comments
 
@@ -53,6 +126,7 @@ const commentDraft = document.getElementById('commentDraft');
 
 const refreshBtn = document.getElementById('refreshBtn');
 const nextBtn = document.getElementById('nextBtn');
+const emptyPostsFilterToggle = document.getElementById('emptyPostsFilterToggle');
 
 let currentPost = null;
 let queue = [];
@@ -70,6 +144,11 @@ if (!apiKey) {
 
 refreshBtn.addEventListener('click', () => bootstrap({ forceRefresh: true }));
 nextBtn.addEventListener('click', () => showNextPost());
+emptyPostsFilterToggle.checked = isEmptyPostFilterEnabled();
+emptyPostsFilterToggle.addEventListener('change', () => {
+  localStorage.setItem(EMPTY_POST_FILTER_KEY, JSON.stringify(emptyPostsFilterToggle.checked));
+  bootstrap({ forceRefresh: false });
+});
 document.querySelectorAll('[data-feedback]').forEach((btn) => {
   btn.addEventListener('click', () => {
     if (!currentPost) return;
@@ -82,11 +161,17 @@ async function bootstrap({ forceRefresh = false } = {}) {
   try {
     setStatus('Fetching posts…');
     const posts = await getPosts({ forceRefresh });
-    const visiblePosts = posts.filter((post) => !wasShownRecently(post.postKey));
+    const filteredPosts = isEmptyPostFilterEnabled()
+      ? posts.filter((post) => !isLowSignalPost(post.text))
+      : posts;
+    const visiblePosts = filteredPosts.filter((post) => !wasShownRecently(post.postKey));
 
     queue = visiblePosts;
     if (!queue.length) {
-      setStatus('No fresh posts: all posts were already shown in the last 7 days. Click "Refresh posts" later.');
+      const filterSuffix = isEmptyPostFilterEnabled()
+        ? ' (some posts were excluded by the hiring/empty-post filter).'
+        : '.';
+      setStatus(`No fresh posts: all posts were already shown in the last 7 days${filterSuffix} Click "Refresh posts" later.`);
       hideWidget();
       return;
     }
@@ -346,4 +431,13 @@ function getFallbackToken() {
   } catch {
     return '';
   }
+}
+
+function isEmptyPostFilterEnabled() {
+  return readJson(EMPTY_POST_FILTER_KEY, true) !== false;
+}
+
+function isLowSignalPost(text) {
+  if (!text) return false;
+  return LOW_SIGNAL_POST_PATTERNS.some((pattern) => pattern.test(text));
 }
