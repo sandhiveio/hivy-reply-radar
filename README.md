@@ -1,27 +1,50 @@
-# Reply Radar (frontend-only)
+# 🚀 Hivy Reply Radar
 
-A local frontend widget that fetches LinkedIn posts and suggests draft comments.
+Beautiful frontend widget for finding engaging LinkedIn posts and generating high-quality draft replies/reposts in seconds.
 
-## Features
+## 🌐 Live Demo (Very Visible)
 
-- Sends requests to RapidAPI `linkedin-posts-search-api`.
-- Shows a post card, engagement metrics, a draft comment, and CTA.
-- Action buttons: **Relevant / Not relevant / Next**.
-- Caches data:
-  - post feed for 20 minutes to avoid excessive API calls;
-  - each post and post-view marker for **7 days**.
-- If comment count is low (less than 8), suggests leaving a comment.
-- If comment count is high, suggests making a quote post.
+## **👉 [Open Hivy Reply Radar](https://sandhiveio.github.io/hivy-reply-radar/) 👈**
 
-## Quick start
+---
 
-1. Copy the config template:
+## ✨ What it does
 
-```bash
-cp api-config.example.js api-config.js
-```
+- Pulls LinkedIn posts via RapidAPI (`linkedin-posts-search-api`).
+- Displays a clean post card with:
+  - author and post link;
+  - engagement stats;
+  - AI-generated reply or repost suggestion.
+- Shows **live logs in the top-left corner** so you can track what the app is doing in real time.
+- Lets you mark suggestions as:
+  - **Relevant**
+  - **Not relevant**
+  - **Next**
+- Uses caching to stay fast and API-friendly:
+  - feed cache: **20 minutes**
+  - shown posts / post metadata / feedback: **7 days**
+- Applies a low-signal filter (hiring/congrats/empty-style posts) to keep feed quality high.
 
-2. Put your short-lived API key into `api-config.js`.
+---
+
+## ⚡ Quick Start
+
+1. Create local config:
+
+   ```bash
+   cp api-config.example.js api-config.js
+   ```
+
+2. Add your short-lived RapidAPI key to `api-config.js`.
 3. Open `index.html` in your browser.
 
-> Important: `api-config.js` is ignored by Git to prevent key leaks.
+> `api-config.js` is gitignored to prevent accidental key leaks.
+
+---
+
+## 🔗 Official Links
+
+- **LinkedIn:** https://www.linkedin.com/in/alexeykirsanov/
+- **X (Twitter):** https://x.com/IronRedSandHive
+- **Website:** https://www.sandhive.io/
+- **Telegram:** https://t.me/Abiron

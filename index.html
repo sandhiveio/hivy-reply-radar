@@ -13,11 +13,22 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <aside class="live-log" id="liveLog" aria-live="polite">
+      <div class="live-log__header">
+        <strong>Live Logs</strong>
+        <span id="logCounter">0</span>
+      </div>
+      <ul id="logList"></ul>
+    </aside>
+
     <div class="app-shell">
       <header class="app-header">
         <div>
           <p class="eyebrow">LinkedIn Reply Radar</p>
           <h1>Post feed + comment suggestions</h1>
+          <p class="intro">
+            Reply Radar helps you discover high-signal LinkedIn posts and instantly craft thoughtful comments or repost captions.
+          </p>
         </div>
         <div class="header-controls">
           <label class="toggle toggle--strong" for="emptyPostsFilterToggle">
@@ -68,9 +79,20 @@
           </footer>
         </section>
       </main>
+
+      <section class="links-showcase">
+        <h2>Connect</h2>
+        <div class="links-showcase__grid">
+          <a href="https://www.linkedin.com/in/alexeykirsanov/" target="_blank" rel="noreferrer">LinkedIn Profile</a>
+          <a href="https://x.com/IronRedSandHive" target="_blank" rel="noreferrer">X / Twitter</a>
+          <a href="https://www.sandhive.io/" target="_blank" rel="noreferrer">Sandhive Website</a>
+          <a href="https://t.me/Abiron" target="_blank" rel="noreferrer">Telegram</a>
+          <a href="https://sandhiveio.github.io/hivy-reply-radar/" target="_blank" rel="noreferrer">Live Project Page</a>
+        </div>
+      </section>
     </div>
 
     <script src="./api-config.js"></script>
-    <script type="module" src="./app.js?v=2026-04-09-2"></script>
+    <script type="module" src="./app.js?v=2026-04-09-3"></script>
   </body>
 </html>
