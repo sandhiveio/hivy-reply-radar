@@ -22,7 +22,7 @@ Beautiful frontend widget for finding engaging LinkedIn posts and generating hig
 - Uses caching to stay fast and API-friendly:
   - feed cache: **20 minutes**
   - shown posts / post metadata / feedback: **7 days**
-- Applies a low-signal filter (hiring/congrats/empty-style posts) to keep feed quality high.
+- Applies a low-signal filter (hiring/congrats/empty-style posts + unknown authors) to keep feed quality high.
 
 ---
 
