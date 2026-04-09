@@ -112,6 +112,31 @@ When you write comments:
 - Be respectful and curious, even in disagreement.
   - Never aggressive, never condescending.`,
 ];
+const REPOST_STYLE_PROMPT = [
+  `## Goal of repost text
+
+- Keep the same positioning as comments:
+  - founder-level builder in scraping/crawlers/unofficial APIs/ETL/data quality.
+- Repost text should work as a **short accompanying caption** to someone else's post.
+- Add useful context for your audience and invite discussion without hijacking the original author's message.
+
+## Style & tone
+
+When you write repost text:
+
+- Keep the same voice as comments: calm, practical, confident, no hype.
+- Prefer concise format:
+  - usually **2–4 short lines/sentences**.
+- Start with a concrete takeaway from the original post (not generic praise).
+- Add one of:
+  - a practical nuance from your experience, or
+  - a specific implementation angle, or
+  - a thoughtful question to your network.
+- Respect original author:
+  - no clickbait, no overclaiming, no "hot take" aggression.
+- Avoid sales CTA and avoid sounding like a pitch.
+- Mention AI/LLMs only when the original post is clearly about it; otherwise focus on systems, data quality, reliability, and outcomes.`,
+];
 
 const loadingState = document.getElementById('loadingState');
 const postCard = document.getElementById('postCard');
@@ -327,7 +352,7 @@ async function generateSuggestion(post, suggestionType) {
         user: { account: 'reply-radar' },
         t: suggestionType,
         name: 'reply-radar',
-        style_prompt: GENERATION_STYLE_PROMPT,
+        style_prompt: suggestionType === 1 ? GENERATION_STYLE_PROMPT : REPOST_STYLE_PROMPT,
       }),
     });
 
