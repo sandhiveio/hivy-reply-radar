@@ -126,6 +126,7 @@ const likesBadge = document.getElementById('likesBadge');
 const commentsBadge = document.getElementById('commentsBadge');
 const suggestionBadge = document.getElementById('suggestionBadge');
 const commentDraft = document.getElementById('commentDraft');
+const copyCommentBtn = document.getElementById('copyCommentBtn');
 
 const refreshBtn = document.getElementById('refreshBtn');
 const nextBtn = document.getElementById('nextBtn');
@@ -134,6 +135,9 @@ const emptyPostsFilterToggle = document.getElementById('emptyPostsFilterToggle')
 let currentPost = null;
 let queue = [];
 let generationRequestId = 0;
+let paginationOffset = 0;
+let hasMorePosts = true;
+let isFetchingMore = false;
 
 const config = window.RAPID_API_CONFIG;
 const fallbackToken = getFallbackToken();
@@ -159,17 +163,15 @@ document.querySelectorAll('[data-feedback]').forEach((btn) => {
     showNextPost();
   });
 });
+copyCommentBtn?.addEventListener('click', () => copyCurrentSuggestion());
 
 async function bootstrap({ forceRefresh = false } = {}) {
   try {
+    hasMorePosts = true;
+    paginationOffset = 0;
     setStatus('Fetching posts…');
-    const posts = await getPosts({ forceRefresh });
-    const filteredPosts = isEmptyPostFilterEnabled()
-      ? posts.filter((post) => !isLowSignalPost(post.text))
-      : posts;
-    const visiblePosts = filteredPosts.filter((post) => !wasShownRecently(post.postKey));
-
-    queue = visiblePosts;
+    queue = [];
+    await loadMorePosts({ forceRefresh });
     if (!queue.length) {
       const filterSuffix = isEmptyPostFilterEnabled()
         ? ' (some posts were excluded by the hiring/empty-post filter).'
@@ -187,25 +189,25 @@ async function bootstrap({ forceRefresh = false } = {}) {
   }
 }
 
-async function getPosts({ forceRefresh }) {
+async function getPosts({ forceRefresh, offset = 0 }) {
   pruneStorage();
   if (!forceRefresh) {
     const cachedFeed = readJson(FEED_CACHE_KEY, null);
-    if (cachedFeed && Date.now() - cachedFeed.cachedAt < FEED_TTL_MS) {
+    if (offset === 0 && cachedFeed && Date.now() - cachedFeed.cachedAt < FEED_TTL_MS) {
       return cachedFeed.posts || [];
     }
   }
 
   const shownCache = readJson(SHOWN_CACHE_KEY, {});
   const now = Date.now();
-  let offset = 0;
+  let currentOffset = offset;
   let result = null;
 
   for (let attempt = 0; attempt < MAX_OFFSET_ATTEMPTS; attempt += 1) {
     const payload = {
       minLikesPerHour: MIN_LIKES_PER_HOUR,
       limit: PAGE_LIMIT,
-      offset,
+      offset: currentOffset,
       country: 'www',
     };
     if (isEmptyPostFilterEnabled()) {
@@ -233,7 +235,7 @@ async function getPosts({ forceRefresh }) {
     const isLastPage = result.data.length < PAGE_LIMIT;
     if (hasUnshownPosts || isLastPage) break;
 
-    offset += PAGE_LIMIT;
+    currentOffset += PAGE_LIMIT;
   }
 
   const responsePosts = result?.data || [];
@@ -244,27 +246,39 @@ async function getPosts({ forceRefresh }) {
     cachedAt: Date.now(),
   }));
 
-  localStorage.setItem(
-    FEED_CACHE_KEY,
-    JSON.stringify({
-      cachedAt: Date.now(),
-      posts,
-    }),
-  );
+  if (offset === 0) {
+    localStorage.setItem(
+      FEED_CACHE_KEY,
+      JSON.stringify({
+        cachedAt: Date.now(),
+        posts,
+      }),
+    );
+  }
 
   return posts;
 }
 
 function showNextPost() {
   if (!queue.length) {
-    setStatus('No more posts in the queue. You can refresh the feed.');
-    hideWidget();
+    loadMorePosts().then(() => {
+      if (!queue.length) {
+        setStatus('No more posts in the queue. You can refresh the feed.');
+        hideWidget();
+        return;
+      }
+      showNextPost();
+    });
     return;
   }
 
   currentPost = queue.shift();
   markShown(currentPost.postKey);
   renderPost(currentPost);
+
+  if (queue.length <= 2) {
+    loadMorePosts();
+  }
 }
 
 function renderPost(post) {
@@ -337,6 +351,32 @@ async function generateSuggestion(post, suggestionType) {
   }
 }
 
+async function loadMorePosts({ forceRefresh = false } = {}) {
+  if (isFetchingMore || !hasMorePosts) return;
+
+  isFetchingMore = true;
+  setStatus('Fetching posts…');
+
+  try {
+    const posts = await getPosts({ forceRefresh, offset: paginationOffset });
+    const filteredPosts = isEmptyPostFilterEnabled()
+      ? posts.filter((post) => !isLowSignalPost(post.text))
+      : posts;
+    const visiblePosts = filteredPosts.filter((post) => !wasShownRecently(post.postKey));
+    queue.push(...visiblePosts);
+
+    paginationOffset += PAGE_LIMIT;
+    if (posts.length < PAGE_LIMIT) {
+      hasMorePosts = false;
+    }
+  } catch (error) {
+    setStatus(`Loading error: ${error.message}`);
+    throw error;
+  } finally {
+    isFetchingMore = false;
+  }
+}
+
 function setStatus(text) {
   loadingState.textContent = text;
   loadingState.classList.remove('hidden');
@@ -362,6 +402,29 @@ function setDraftLoading(text) {
 function setDraftText(text) {
   commentDraft.textContent = text;
   commentDraft.classList.remove('is-loading');
+}
+
+async function copyCurrentSuggestion() {
+  const text = commentDraft?.textContent?.trim();
+  if (!text || commentDraft.classList.contains('is-loading')) return;
+
+  const restoreCopyText = () => {
+    copyCommentBtn.innerHTML = '<span aria-hidden="true">📋</span><span>Copy</span>';
+  };
+
+  if (!navigator.clipboard?.writeText) {
+    copyCommentBtn.textContent = 'Copy unavailable';
+    setTimeout(restoreCopyText, 1300);
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    copyCommentBtn.textContent = 'Copied!';
+  } catch {
+    copyCommentBtn.textContent = 'Copy failed';
+  }
+  setTimeout(restoreCopyText, 1300);
 }
 
 function wasShownRecently(postKey) {
