@@ -406,7 +406,7 @@ async function loadMorePosts({ forceRefresh = false } = {}) {
   try {
     const posts = await getPosts({ forceRefresh, offset: paginationOffset });
     const filteredPosts = isEmptyPostFilterEnabled()
-      ? posts.filter((post) => !isLowSignalPost(post.text))
+      ? posts.filter((post) => !isLowSignalPost(post.text) && !hasUnknownAuthor(post.author))
       : posts;
     const visiblePosts = filteredPosts.filter((post) => !wasShownRecently(post.postKey));
     queue.push(...visiblePosts);
@@ -564,6 +564,11 @@ function isEmptyPostFilterEnabled() {
 function isLowSignalPost(text) {
   if (!text) return false;
   return LOW_SIGNAL_POST_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+function hasUnknownAuthor(author) {
+  if (!author) return true;
+  return author.trim().toLowerCase() === 'unknown author';
 }
 
 function addLog(message) {
