@@ -152,8 +152,6 @@ const commentsBadge = document.getElementById('commentsBadge');
 const suggestionBadge = document.getElementById('suggestionBadge');
 const commentDraft = document.getElementById('commentDraft');
 const copyCommentBtn = document.getElementById('copyCommentBtn');
-const logList = document.getElementById('logList');
-const logCounter = document.getElementById('logCounter');
 
 const refreshBtn = document.getElementById('refreshBtn');
 const nextBtn = document.getElementById('nextBtn');
@@ -396,7 +394,6 @@ async function generateSuggestion(post, suggestionType) {
         : 'Could not generate repost text now. Try Next or Refresh posts.',
     );
     addLog(`Suggestion generation failed: ${error.message}`);
-    console.error('Generation failed:', error);
   }
 }
 
@@ -570,16 +567,5 @@ function isLowSignalPost(text) {
 }
 
 function addLog(message) {
-  if (!logList) return;
-  const item = document.createElement('li');
-  item.textContent = `[${new Date().toLocaleTimeString('en-US')}] ${message}`;
-  logList.prepend(item);
-
-  while (logList.children.length > 9) {
-    logList.removeChild(logList.lastChild);
-  }
-
-  if (logCounter) {
-    logCounter.textContent = String(logList.children.length);
-  }
+  void message;
 }

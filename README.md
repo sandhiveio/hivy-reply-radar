@@ -15,7 +15,6 @@ Beautiful frontend widget for finding engaging LinkedIn posts and generating hig
   - author and post link;
   - engagement stats;
   - AI-generated reply or repost suggestion.
-- Shows **live logs in the top-left corner** so you can track what the app is doing in real time.
 - Lets you mark suggestions as:
   - **Relevant**
   - **Not relevant**
@@ -44,7 +43,7 @@ Beautiful frontend widget for finding engaging LinkedIn posts and generating hig
 
 ## 🔗 Official Links
 
-- **LinkedIn:** https://www.linkedin.com/in/alexeykirsanov/
-- **X (Twitter):** https://x.com/IronRedSandHive
-- **Website:** https://www.sandhive.io/
-- **Telegram:** https://t.me/Abiron
+- 💼 **LinkedIn:** https://www.linkedin.com/in/alexeykirsanov/
+- 🐦 **X (Twitter):** https://x.com/IronRedSandHive
+- 🌐 **Website:** https://www.sandhive.io/
+- ✈️ **Telegram:** https://t.me/Abiron
