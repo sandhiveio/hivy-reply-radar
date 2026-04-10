@@ -370,7 +370,7 @@ async function generateSuggestion(post, suggestionType) {
       body: JSON.stringify({
         tweet: post.text || '',
         user: { account: 'reply-radar' },
-        t: suggestionType,
+        t: 1,
         name: 'reply-radar',
         style_prompt: suggestionType === 1 ? GENERATION_STYLE_PROMPT : REPOST_STYLE_PROMPT,
       }),
