@@ -13,7 +13,7 @@ const FEED_TTL_MS = 20 * 60 * 1000;
 const LOW_COMMENTS_THRESHOLD = 8;
 const PAGE_LIMIT = 10;
 const MAX_OFFSET_ATTEMPTS = 12;
-const MIN_LIKES_PER_HOUR = 3.5;
+const MIN_LIKES_PER_HOUR = 2.5;
 const EXCLUDE_WORDS_FILTER =
   'hiring join team looking hire opening vacancy apply alert referral cv role position open congratulating congratulations welcome thrilled excited happy proud announce joined joining moving starting role journey chapter career promotion grateful opportunity blessed stay tuned';
 const LOW_SIGNAL_POST_PATTERNS = [
